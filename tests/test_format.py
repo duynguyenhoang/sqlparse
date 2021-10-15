@@ -42,25 +42,67 @@ class TestFormat:
         sql = 'select *-- statement starts here\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select *\nfrom foo'
+
         sql = 'select * -- statement starts here\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select *\nfrom foo'
+
         sql = 'select-- foo\nfrom -- bar\nwhere'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select\nfrom\nwhere'
+
         sql = 'select *-- statement starts here\n\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select *\n\nfrom foo'
+
         sql = 'select * from foo-- statement starts here\nwhere'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select * from foo\nwhere'
+
         sql = 'select a-- statement starts here\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select a\nfrom foo'
+
         sql = '--comment\nselect a-- statement starts here\n' \
               'from foo--comment\nf'
         res = sqlparse.format(sql, strip_comments=True)
         assert res == 'select a\nfrom foo\nf'
+
+    def test_strip_hint(self):
+        # Contain hint and comment
+        sql = 'select /*! BNL(t1) BKA(t2) */ a -- statement starts here\nfrom foo f'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == 'select /*! BNL(t1) BKA(t2) */ a\nfrom foo f'
+
+        sql = 'select /*+ BNL(t1) BKA(t2) */ * /* statement starts here */\nfrom foo'
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == 'select /*+ BNL(t1) BKA(t2) */ *\nfrom foo'
+
+        # Hint and multi comments
+        sql = """select /*+ SET_VAR(internal_tmp_mem_storage_engine = Memory) */ * -- statement starts here\nfrom foo
+-- this is a query about date
+/* this is
+comment 2 */"""
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == "select /*+ SET_VAR(internal_tmp_mem_storage_engine = Memory) */ *\nfrom foo\n\n"
+
+        sql = """
+SELECT -- this is the test
+/*+ JOIN_PREFIX(t2, t5@subq2, t4@subq1)
+    JOIN_ORDER(t4@subq1, t3)
+    JOIN_SUFFIX(t1) */ --
+COUNT(*) FROM t1 JOIN t2 JOIN t3 --+ another comment
+WHERE t1.f1 IN (SELECT /*+ QB_NAME(subq1) */ f1 FROM t4)
+    AND t2.f1 IN (SELECT /*+ QB_NAME(subq2) */ f1 FROM t5);"""
+        res = sqlparse.format(sql, strip_comments=True)
+        assert res == """
+SELECT
+/*+ JOIN_PREFIX(t2, t5@subq2, t4@subq1)
+    JOIN_ORDER(t4@subq1, t3)
+    JOIN_SUFFIX(t1) */
+COUNT(*) FROM t1 JOIN t2 JOIN t3
+WHERE t1.f1 IN (SELECT /*+ QB_NAME(subq1) */ f1 FROM t4)
+    AND t2.f1 IN (SELECT /*+ QB_NAME(subq2) */ f1 FROM t5);"""
 
     def test_strip_comments_invalid_option(self):
         sql = 'select-- foo\nfrom -- bar\nwhere'

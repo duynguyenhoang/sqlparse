@@ -21,9 +21,10 @@ def is_keyword(value):
 
 SQL_REGEX = {
     'root': [
-        (r'(--|# )\+.*?(\r\n|\r|\n|$)', tokens.Comment.Single.Hint),
-        (r'/\*\+[\s\S]*?\*/', tokens.Comment.Multiline.Hint),
+        (r'/\*\+[\s\S]*?\*/', tokens.Hint.Multiline),  # /*+ BKA(t1) */
+        (r'/\*![\s\S]*?\*/', tokens.Hint.Multiline2),  # /*! BKA(t1) */
 
+        (r'(--|# )\+.*?(\r\n|\r|\n|$)', tokens.Comment.Single.Hint),
         (r'(--|# ).*?(\r\n|\r|\n|$)', tokens.Comment.Single),
         (r'/\*[\s\S]*?\*/', tokens.Comment.Multiline),
 
